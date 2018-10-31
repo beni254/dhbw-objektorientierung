@@ -16,19 +16,26 @@ const double DT = 100.0;
 class GameWindow : public Gosu::Window
 {
 public:
-	Gosu::Image bild;
+	double x = 0;
+	double rot = 0.0;
+	double mouse_x;
+	double mouse_y;
+	Gosu::Image hintergrundbild;
+	Gosu::Image rakete;
+
 	GameWindow()
 		: Window(800, 600)
-		, bild("rakete.png")
-		// Rakete startet in der Mitte des Bildschirmes
-		, pos(graphics().width() / 2.0, graphics().height() / 2.0)
+		, hintergrundbild(
+			"hintergrundbild.png"
+		)
+		, rakete(
+			"rakete.png"
+		)
+		
 	{
-		set_caption("Gosu Tutorial Game mit Git");
+		set_caption("Super Smash Bros");
 
-		// Erzeuge Planeten
-		planets.push_back(Planet({ 200.0, 200.0 }, 0.1, "planet1.png"));
-		planets.push_back(Planet({ 600.0, 200.0 }, 0.1, "planet2.png"));
-		planets.push_back(Planet({ 400.0, 500.0 }, 0.1, "planet3.png"));
+
 	}
 
 	// wird bis zu 60x pro Sekunde aufgerufen.
@@ -36,82 +43,51 @@ public:
 	// dann werden `draw` Aufrufe ausgelassen und die Framerate sinkt
 	void draw() override
 	{
-		bild.draw_rot(pos.get_x(), pos.get_y(), 10.0,
-			rot, // Rotationswinkel in Grad
-			0.5, 0.5 // Position der "Mitte"
+		graphics().draw_quad(
+		300, 200, Gosu::Color::BLUE, 500, 200, Gosu::Color::BLUE, 500, 250, Gosu::Color::BLUE, 300, 250, Gosu::Color::BLUE, 0
+		);
+		graphics().draw_quad(
+			100, 400, Gosu::Color::BLUE, 300, 400, Gosu::Color::BLUE, 300, 450, Gosu::Color::BLUE, 100, 450, Gosu::Color::BLUE, 0
+		); 
+		graphics().draw_quad(
+			500, 400, Gosu::Color::BLUE, 700, 400, Gosu::Color::BLUE, 700, 450, Gosu::Color::BLUE, 500, 450, Gosu::Color::BLUE, 0
 		);
 
-		auto g2 = (gravity * 1000000000000.0).log();
 
-		Vektor2d rose(50.0, 50.0);
-		auto g = rose - g2;
-		auto s = rose + speed * 1000.0;
+		/*graphics().draw_line(
+			mouse_x, mouse_y, Gosu::Color::FUCHSIA,
+			mouse_x + 10, mouse_y + 10, Gosu::Color::RED,
+			0.0
+		);
+		graphics().draw_triangle(
+			mouse_x - 10, mouse_y - 10, Gosu::Color::BLUE,
+			mouse_x - 5, mouse_y + 5, Gosu::Color::YELLOW,
+			mouse_x + 5, mouse_y - 5, Gosu::Color::GREEN,
+			0.0
+		);*/
 
-		graphics().draw_line(pos.get_x(), pos.get_y(), Gosu::Color::GREEN, input().mouse_x(), input().mouse_y(), Gosu::Color::GREEN, -10.0);
-		graphics().draw_line(rose.get_x(), rose.get_y(), Gosu::Color::RED, g.get_x(), g.get_y(), Gosu::Color::RED, 10.0);
-		graphics().draw_line(rose.get_x(), rose.get_y(), Gosu::Color::BLUE, s.get_x(), s.get_y(), Gosu::Color::BLUE, 10.0);
-
-		for (auto planet : planets) {
-			planet.draw();
-		}
+		hintergrundbild.draw(0, 0, -9999999, 1.2, 1.2);
+		rakete.draw_rot(x, 600, 0, 0, 0.5, 0.5, 1.5, 1.5);
 	}
 
-	double rot = 0.0;
-	Vektor2d pos, speed, gravity;
-	double accel = 0.0;
-	std::vector<Planet> planets;
+
 
 	// Wird 60x pro Sekunde aufgerufen
 	void update() override
 	{
-		// Geschwindigkeit führt zu Positionsänderung
-		pos += speed * DT;
-
-		// Beschleunigung während "W" gedrückt
-		if (input().down(Gosu::KB_W)) {
-			accel += 0.00001;
+		mouse_x = input().mouse_x();
+		mouse_y = input().mouse_y();
+		if (input().down(Gosu::KB_RIGHT))
+		{
+			x = x + 10;
 		}
-		else {
-			accel -= 0.00002;
+		else if (input().down(Gosu::KB_LEFT))
+		{
+			x = x - 10;
 		}
+	};
 
-		// Maximale Beschleunigung
-		accel = Gosu::clamp(accel, 0.0, 0.0001);
-
-		// Geschwindigkeit wird in Flugrichtung geändert
-		speed += Vektor2d::from_angle(rot, accel);
-
-
-		gravity = Vektor2d();
-
-		// Planeten ziehen Raumschiff an
-		for (auto planet : planets) {
-
-			// Entfernung im Quadrat
-			double dist = (pos - planet.pos).length_squared();
-
-			// Winkel des Vektors vom Raumschiff zum Planet
-			double angle = pos.angle(planet.pos);
-
-			// Anziehungskraft
-			double pull = planet.mass / dist;
-
-			// Kollision
-			if (dist < 1000) {
-				speed = Vektor2d::from_angle(angle, pull);
-				break;
-			}
-			gravity += Vektor2d::from_angle(angle, pull);
-		}
-
-		speed += gravity;
-
-		// Raumschiff in Richtung Mauszeiger drehen
-		double angle = pos.angle({ input().mouse_x(), input().mouse_y() });
-		rot -= Gosu::angle_diff(angle, rot) / 36.0;
-	}
 };
-
 // C++ Hauptprogramm
 int main()
 {
